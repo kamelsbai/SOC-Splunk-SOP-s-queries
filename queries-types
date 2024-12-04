@@ -1,0 +1,149 @@
+Monitoring suspicious activities in a domain with Splunk typically involves identifying unusual patterns in logs, such as failed login attempts, privilege escalation,
+anomalous network activity, and more. Here are some example Splunk queries that can help you monitor and detect such activities:
+
+### 1. **Failed Login Attempts**  
+Detect multiple failed login attempts from the same IP address or username, which could indicate brute force attempts.
+```spl
+index=your_index sourcetype=your_sourcetype (event="failed_login" OR event="login_failure")
+| stats count by src_ip, username
+| where count > 5
+```
+- **Explanation**: This query looks for failed login attempts and groups them by source IP (`src_ip`) and username. If the count exceeds 5 (you can adjust the threshold),
+it might indicate a brute force attack.
+
+---
+
+### 2. **Account Lockouts**
+Track accounts that are locked out after too many failed login attempts.
+```spl
+index=your_index sourcetype=your_sourcetype event="account_lockout"
+| stats count by username, src_ip
+| where count > 3
+```
+- **Explanation**: This query looks for account lockout events and identifies any usernames or IPs with more than 3 lockouts, which may indicate an attack or suspicious activity.
+
+---
+
+### 3. **Privilege Escalation (Admin Logins)**
+Monitor for unexpected admin logins, which could indicate a compromised account.
+```spl
+index=your_index sourcetype=your_sourcetype user_role="admin"
+| stats count by username, src_ip, _time
+| where count > 1
+```
+- **Explanation**: This query tracks admin user logins, highlighting if the same admin user logs in more than once from different locations or at unusual times.
+
+---
+
+### 4. **Unusual Logon Times**
+Detect users logging in at unusual hours, which could be a sign of compromised accounts.
+```spl
+index=your_index sourcetype=your_sourcetype event="login_success"
+| eval hour_of_day=strftime(_time, "%H")
+| stats count by username, hour_of_day
+| where hour_of_day < 6 OR hour_of_day > 22
+```
+- **Explanation**: This query checks for successful logins during odd hours (before 6 AM or after 10 PM). This could help detect accounts being accessed outside normal working 
+hours.
+
+---
+
+### 5. **Suspicious Network Connections (Anomalous Traffic)**
+Detect high volumes of data transfers or unusual network traffic that could indicate data exfiltration or malicious activity.
+```spl
+index=network_logs sourcetype=your_sourcetype
+| stats sum(bytes_transferred) by src_ip, dest_ip, _time
+| where sum(bytes_transferred) > 1000000
+```
+- **Explanation**: This query flags network traffic where the total bytes transferred exceed a certain threshold (1 MB in this case), which could indicate an attempted data 
+exfiltration or suspicious activity.
+
+---
+
+### 6. **Unusual Access to Sensitive Files**
+Monitor access to sensitive files or systems by non-administrative users.
+```spl
+index=your_index sourcetype=your_sourcetype
+| search "file_access" AND (filename="*confidential*" OR filename="*sensitive*")
+| stats count by username, filename, _time
+| where count > 1
+```
+- **Explanation**: This query identifies when sensitive files (identified by specific patterns or names) are accessed and flags the frequency of these accesses, which could
+indicate an insider threat or external attack.
+
+---
+
+### 7. **Unusual Lateral Movement**
+Detect when users access systems or resources they typically don’t interact with (a sign of lateral movement).
+```spl
+index=your_index sourcetype=your_sourcetype event="remote_access"
+| stats count by username, dest_host
+| where count > 3
+```
+- **Explanation**: This query tracks remote access (e.g., RDP, SSH) by users. If a user is accessing multiple systems they don't typically interact with, it could indicate 
+lateral movement within the network.
+
+---
+
+### 8. **Sudden Increase in Authentication Failures**
+Monitor for a sudden spike in authentication failures across all users or specific usernames.
+```spl
+index=your_index sourcetype=your_sourcetype event="failed_login"
+| timechart span=1h count by username
+| where 'count' > 50
+```
+- **Explanation**: This query generates a timechart of failed login attempts by username, highlighting spikes in failed logins over a 1-hour period. It flags usernames with 
+an excessive number of failed login attempts.
+
+---
+
+### 9. **Suspicious PowerShell or Command Line Activity**
+Identify suspicious PowerShell or command-line executions often used by attackers for lateral movement or malware delivery.
+```spl
+index=your_index sourcetype=your_sourcetype (process_name="powershell.exe" OR process_name="cmd.exe")
+| stats count by username, process_name, src_ip, _time
+| where count > 5
+```
+- **Explanation**: This query tracks the use of PowerShell or command prompt (`cmd.exe`) to run potentially malicious commands. Multiple executions might indicate an attack.
+
+---
+
+### 10. **Detecting Suspicious DNS Requests**
+Monitor unusual DNS queries that could be part of a C2 (command and control) attack.
+```spl
+index=dns_logs sourcetype=your_sourcetype
+| stats count by query, src_ip
+| where count > 10 AND (query="*.top" OR query="*.xyz")
+```
+- **Explanation**: This query tracks DNS queries for suspicious top-level domains (TLDs) commonly associated with malware or C2 servers. It flags queries with a high 
+frequency or specific suspicious domains.
+
+---
+
+### 11. **Admin User Login from Foreign Locations**
+Alert if an admin user logs in from a foreign country or an unexpected location.
+```spl
+index=your_index sourcetype=your_sourcetype user_role="admin"
+| lookup ip_to_country src_ip AS src_ip OUTPUT country AS user_country
+| search user_country!="ExpectedCountry"
+| stats count by username, src_ip, user_country
+```
+- **Explanation**: This query uses IP-to-country lookups to identify when an admin user logs in from a foreign or unexpected country. It raises an alert if the login location 
+is outside the expected geographic regions.
+
+---
+
+### 12. **Detection of Known Malicious IPs or Domains**
+Detect communication with known malicious IPs or domains.
+```spl
+index=your_index sourcetype=your_sourcetype
+| lookup malicious_ips ip AS src_ip OUTPUT ip_category
+| search ip_category="malicious"
+| stats count by src_ip, dest_ip
+```
+- **Explanation**: This query checks if your network is communicating with known malicious IPs or domains. You’ll need a lookup table with the list of known malicious IPs/domains.
+
+---
+
+### Conclusion:
+These queries are a starting point for detecting suspicious activities within your domain using Splunk. You can customize them based on your environment, thresholds, and the nature of your network. Additionally, leveraging Splunk's machine learning toolkit can help refine these queries over time to detect more sophisticated patterns.

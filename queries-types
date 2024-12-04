@@ -1,5 +1,6 @@
-Monitoring suspicious activities in a domain with Splunk typically involves identifying unusual patterns in logs, such as failed login attempts, privilege escalation,
-anomalous network activity, and more. Here are some example Splunk queries that can help you monitor and detect such activities:
+Monitoring suspicious activities in a domain with Splunk typically involves identifying unusual patterns in logs, such as failed
+login attempts, privilege escalation, anomalous network activity, and more. Here are some example Splunk queries that can help
+you monitor and detect such activities:
 
 ### 1. **Failed Login Attempts**  
 Detect multiple failed login attempts from the same IP address or username, which could indicate brute force attempts.
@@ -8,8 +9,8 @@ index=your_index sourcetype=your_sourcetype (event="failed_login" OR event="logi
 | stats count by src_ip, username
 | where count > 5
 ```
-- **Explanation**: This query looks for failed login attempts and groups them by source IP (`src_ip`) and username. If the count exceeds 5 (you can adjust the threshold),
-it might indicate a brute force attack.
+- **Explanation**: This query looks for failed login attempts and groups them by source IP (`src_ip`) and username. If the count
+exceeds 5 (you can adjust the threshold), it might indicate a brute force attack.
 
 ---
 
@@ -20,7 +21,8 @@ index=your_index sourcetype=your_sourcetype event="account_lockout"
 | stats count by username, src_ip
 | where count > 3
 ```
-- **Explanation**: This query looks for account lockout events and identifies any usernames or IPs with more than 3 lockouts, which may indicate an attack or suspicious activity.
+- **Explanation**: This query looks for account lockout events and identifies any usernames or IPs with more than 3 lockouts,
+which may indicate an attack or suspicious activity.
 
 ---
 
@@ -31,7 +33,8 @@ index=your_index sourcetype=your_sourcetype user_role="admin"
 | stats count by username, src_ip, _time
 | where count > 1
 ```
-- **Explanation**: This query tracks admin user logins, highlighting if the same admin user logs in more than once from different locations or at unusual times.
+- **Explanation**: This query tracks admin user logins, highlighting if the same admin user logs in more than once from
+different locations or at unusual times.
 
 ---
 
@@ -43,7 +46,8 @@ index=your_index sourcetype=your_sourcetype event="login_success"
 | stats count by username, hour_of_day
 | where hour_of_day < 6 OR hour_of_day > 22
 ```
-- **Explanation**: This query checks for successful logins during odd hours (before 6 AM or after 10 PM). This could help detect accounts being accessed outside normal working 
+- **Explanation**: This query checks for successful logins during odd hours (before 6 AM or after 10 PM). This could help
+detect accounts being accessed outside normal working 
 hours.
 
 ---
@@ -55,8 +59,8 @@ index=network_logs sourcetype=your_sourcetype
 | stats sum(bytes_transferred) by src_ip, dest_ip, _time
 | where sum(bytes_transferred) > 1000000
 ```
-- **Explanation**: This query flags network traffic where the total bytes transferred exceed a certain threshold (1 MB in this case), which could indicate an attempted data 
-exfiltration or suspicious activity.
+- **Explanation**: This query flags network traffic where the total bytes transferred exceed a certain threshold
+(1 MB in this case), which could indicate an attempted data exfiltration or suspicious activity.
 
 ---
 
@@ -68,8 +72,8 @@ index=your_index sourcetype=your_sourcetype
 | stats count by username, filename, _time
 | where count > 1
 ```
-- **Explanation**: This query identifies when sensitive files (identified by specific patterns or names) are accessed and flags the frequency of these accesses, which could
-indicate an insider threat or external attack.
+- **Explanation**: This query identifies when sensitive files (identified by specific patterns or names) are accessed and flags
+the frequency of these accesses, which could indicate an insider threat or external attack.
 
 ---
 
@@ -80,8 +84,8 @@ index=your_index sourcetype=your_sourcetype event="remote_access"
 | stats count by username, dest_host
 | where count > 3
 ```
-- **Explanation**: This query tracks remote access (e.g., RDP, SSH) by users. If a user is accessing multiple systems they don't typically interact with, it could indicate 
-lateral movement within the network.
+- **Explanation**: This query tracks remote access (e.g., RDP, SSH) by users. If a user is accessing multiple systems they don't
+typically interact with, it could indicate lateral movement within the network.
 
 ---
 
@@ -92,8 +96,8 @@ index=your_index sourcetype=your_sourcetype event="failed_login"
 | timechart span=1h count by username
 | where 'count' > 50
 ```
-- **Explanation**: This query generates a timechart of failed login attempts by username, highlighting spikes in failed logins over a 1-hour period. It flags usernames with 
-an excessive number of failed login attempts.
+- **Explanation**: This query generates a timechart of failed login attempts by username, highlighting spikes in failed logins
+over a 1-hour period. It flags usernames with an excessive number of failed login attempts.
 
 ---
 
@@ -104,7 +108,8 @@ index=your_index sourcetype=your_sourcetype (process_name="powershell.exe" OR pr
 | stats count by username, process_name, src_ip, _time
 | where count > 5
 ```
-- **Explanation**: This query tracks the use of PowerShell or command prompt (`cmd.exe`) to run potentially malicious commands. Multiple executions might indicate an attack.
+- **Explanation**: This query tracks the use of PowerShell or command prompt (`cmd.exe`) to run potentially malicious commands.
+Multiple executions might indicate an attack.
 
 ---
 
@@ -115,8 +120,8 @@ index=dns_logs sourcetype=your_sourcetype
 | stats count by query, src_ip
 | where count > 10 AND (query="*.top" OR query="*.xyz")
 ```
-- **Explanation**: This query tracks DNS queries for suspicious top-level domains (TLDs) commonly associated with malware or C2 servers. It flags queries with a high 
-frequency or specific suspicious domains.
+- **Explanation**: This query tracks DNS queries for suspicious top-level domains (TLDs) commonly associated with malware or
+C2 servers. It flags queries with a high frequency or specific suspicious domains.
 
 ---
 
@@ -128,8 +133,8 @@ index=your_index sourcetype=your_sourcetype user_role="admin"
 | search user_country!="ExpectedCountry"
 | stats count by username, src_ip, user_country
 ```
-- **Explanation**: This query uses IP-to-country lookups to identify when an admin user logs in from a foreign or unexpected country. It raises an alert if the login location 
-is outside the expected geographic regions.
+- **Explanation**: This query uses IP-to-country lookups to identify when an admin user logs in from a foreign or unexpected 
+country. It raises an alert if the login location is outside the expected geographic regions.
 
 ---
 
@@ -141,9 +146,12 @@ index=your_index sourcetype=your_sourcetype
 | search ip_category="malicious"
 | stats count by src_ip, dest_ip
 ```
-- **Explanation**: This query checks if your network is communicating with known malicious IPs or domains. You’ll need a lookup table with the list of known malicious IPs/domains.
+- **Explanation**: This query checks if your network is communicating with known malicious IPs or domains. You’ll need a lookup 
+table with the list of known malicious IPs/domains.
 
 ---
 
 ### Conclusion:
-These queries are a starting point for detecting suspicious activities within your domain using Splunk. You can customize them based on your environment, thresholds, and the nature of your network. Additionally, leveraging Splunk's machine learning toolkit can help refine these queries over time to detect more sophisticated patterns.
+These queries are a starting point for detecting suspicious activities within your domain using Splunk. You can customize them 
+based on your environment, thresholds, and the nature of your network. Additionally, leveraging Splunk's machine learning toolkit
+can help refine these queries over time to detect more sophisticated patterns.

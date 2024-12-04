@@ -1,0 +1,37 @@
+Suspicious login activity can include:
+
+-> Failed login attempts.
+-> Logins from unusual geographic locations.
+-> Logins outside of normal business hours.
+-> Multiple logins in a short period of time.
+
+Here is a Splunk query that monitors for suspicious login activity based on:
+-Failed logins.
+-Excessive logins from a single user.
+
+index=security_logs sourcetype=logon
+| stats count by user, src_ip, _time, action
+| eval action=if(action="failure", "failed", "successful")
+| eval time_of_day=strftime(_time, "%H")
+| eval weekday=strftime(_time, "%A")
+| where action="failed" AND count > 5
+| table user, src_ip, count, time_of_day, weekday
+| sort -count
+
+
+Explanation of the Query:
+index=security_logs: Searches the logs where login information is stored (you may need to adjust the index name based on your Splunk configuration).
+sourcetype=logon: This specifies the sourcetype for the logs (you may need to adjust this as well).
+stats count by user, src_ip, _time, action: This calculates the number of logins for each user, from each IP address, and includes the action (success/failure).
+eval action=if(action="failure", "failed", "successful"): This converts the action field to a more readable format.
+eval time_of_day=strftime(_time, "%H"): This calculates the time of the login attempt (in hours).
+eval weekday=strftime(_time, "%A"): This calculates the day of the week.
+where action="failed" AND count > 5: This filters for failed login attempts where there are more than 5 attempts.
+table user, src_ip, count, time_of_day, weekday: This creates a table that displays the user, source IP, failed attempt count, time of day, and day of the week.
+sort -count: This sorts the results by the number of failed login attempts in descending order.
+Additional Considerations:
+You can extend this query to monitor for:
+
+Logins during off-hours: You could use time_of_day to flag logins that happen during odd hours (e.g., 00:00 - 06:00).
+Login from unusual locations/IPs: Use src_ip and cross-reference with known safe IP addresses.
+Multiple logins in a short period: You could create a query to detect a spike in logins by a user, such as more than 10 attempts in a minute.
